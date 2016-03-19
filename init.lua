@@ -29,7 +29,7 @@ function do_update()
         for i=1, math.min(#departures, LINES) do
           setcursor(0, i)
           d = departures[i]
-          uart.write(string.format("%s %s %s"), d["route"], d["destination"], d["strTime"])
+          uart.write(0, string.format("%s %s %s", d["route"], d["destination"], d["strTime"]))
         end
       end
     end
