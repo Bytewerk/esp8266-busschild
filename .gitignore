@@ -1,5 +1,6 @@
 *
 .*
 !.gitignore
+!Readme.md
 !*.lua
 !license.txt
