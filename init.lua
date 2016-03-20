@@ -1,3 +1,5 @@
+-- © 2016 Peter Brantsch <peter@bingo-ev.de>, see license.txt
+
 timers = {
   ["HTTP"] = 0;
   ["display"] = 1;
