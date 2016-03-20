@@ -2,7 +2,7 @@ TIMERS = {
   ["HTTP"] = 0;
 }
 UPDATE_INTERVAL = 30*1000
-RT_URL = "http://www.invg.de/rt/getRealtimeData.action?stopPoint=2&station=IN-Klini"
+RT_URL = "http://www.invg.de/rt/getRealtimeData.action?stopPoint=2&station=IN-Klini&sid=273"
 SSID = "Freifunk"
 PASSPHRASE = ""
 LINES = 2
@@ -44,7 +44,6 @@ end
 
 function init()
   uart.setup(0, 9600, 8, uart.PARITY_ODD, uart.STOPBITS_1, 1)
-  tmr.start(0)
   setcursor(0,0)
   uart.write(0, "      bytewerk      \r\n Busabfahrtsanzeige ")
   wifi.setmode(wifi.STATION)
@@ -60,6 +59,7 @@ function init()
   wifi.sta.config(SSID, PASSPHRASE)
   wifi.sta.connect()
   tmr.register(TIMERS["HTTP"], UPDATE_INTERVAL, tmr.ALARM_AUTO, do_update)
+  tmr.start(0)
 end
 
 function progmode()
