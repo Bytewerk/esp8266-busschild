@@ -2,7 +2,6 @@ TIMERS = {
   ["HTTP"] = 0;
 }
 UPDATE_INTERVAL = 30*1000
-DISPLAY_UPDATE_INTERVAL = 5
 RT_URL = "http://www.invg.de/rt/getRealtimeData.action?stopPoint=2&station=IN-Klini"
 SSID = "Freifunk"
 PASSPHRASE = ""
@@ -19,19 +18,26 @@ end
 function do_update()
   http.get(RT_URL, nil, function(code, _data)
     if (code >= 0) then
-      data = cjson.decode(_data)
-      departures = data["departures"]
-      clear()
+      departures = cjson.decode(_data).departures
+      setcursor(0,0)
       if #departures == 0 then
         setcursor(0,0)
         uart.write(0, "Ich seh keinen Bus.\r\nHeimlaufen?")
       else
-        for i=1, math.min(#departures, LINES) do
+        n = math.min(#departures, LINES)
+        for i=1, n do
           setcursor(0, i)
           d = departures[i]
-          uart.write(0, string.format("%s %s %s", d["route"], d["destination"], d["strTime"]))
+          route = string.sub(d.route:gsub("%s+", "") .. " " .. d.destination, 1, 16)
+          route = route .. string.rep(" ", 17-route:len())
+          time = d.strTime:gsub("(%d+).*", "%1") .. "m"
+          uart.write(0, route)
+          uart.write(0, time)
         end
       end
+    else
+      setcursor(0,0)
+      uart.write(0, "Konnte Daten nicht\r\nholen: HTTP-Fehler.")
     end
   end)
 end
