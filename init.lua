@@ -1,7 +1,10 @@
-TIMERS = {
+timers = {
   ["HTTP"] = 0;
+  ["display"] = 1;
 }
 config = require("config")
+departures = {}
+scroll_idx = 1
 
 function setcursor(x,y)
   uart.write(0, string.format("\27[%d;%dH", y, x))
@@ -11,29 +14,43 @@ function clear()
   uart.write(0, "\27[2J")
 end
 
-function do_update()
+function format_departure(d)
+  time = tonumber(d.strTime:gsub("(%d+).*", "%1"), 10)
+  strTime = (time == 0) and " JETZT" or string.format(" %dm", time)
+  route = d.route:gsub("%s+", "") .. " " .. d.destination
+  len = config.columns - strTime:len()
+  route_adj = route:sub(1, len) .. string.rep(" ", len - route:len())
+  return route_adj .. strTime
+end
+
+function update_display()
+  setcursor(0,0)
+  if #departures == 0 then
+    setcursor(0,0)
+    uart.write(0, "Ich seh keinen Bus.\r\nHeimlaufen?")
+  else
+    for i=1, math.min(config.lines-1, #departures) do
+      setcursor(0, i)
+      uart.write(0, format_departure(departures[i]))
+    end
+    if #departures >= config.lines then
+      scroll_idx = scroll_idx >= #departures and config.lines or scroll_idx + 1
+      setcursor(0, config.lines)
+      uart.write(0, format_departure(departures[scroll_idx]))
+    end
+  end
+end
+
+function update_data()
   http.get(config.url, nil, function(code, _data)
     if (code >= 0) then
       departures = cjson.decode(_data).departures
-      setcursor(0,0)
-      if #departures == 0 then
-        setcursor(0,0)
-        uart.write(0, "Ich seh keinen Bus.\r\nHeimlaufen?")
-      else
-        n = math.min(#departures, config.lines)
-        for i=1, n do
-          setcursor(0, i)
-          d = departures[i]
-          route = string.sub(d.route:gsub("%s+", "") .. " " .. d.destination, 1, 16)
-          route = route .. string.rep(" ", 17-route:len())
-          time = d.strTime:gsub("(%d+).*", "%1") .. "m"
-          uart.write(0, route)
-          uart.write(0, time)
-        end
-      end
+      update_display()
+      tmr.alarm(timers["display"], 3000, tmr.ALARM_AUTO, update_display)
     else
       setcursor(0,0)
       uart.write(0, "Konnte Daten nicht\r\nholen: HTTP-Fehler.")
+      tmr.unregister(timers["display"])
     end
   end)
 end
@@ -42,24 +59,28 @@ function init()
   uart.setup(0, 9600, 8, uart.PARITY_ODD, uart.STOPBITS_1, 1)
   setcursor(0,0)
   uart.write(0, "      bytewerk      \r\n Busabfahrtsanzeige ")
-  wifi.setmode(wifi.STATION)
-  wifi.sta.eventMonReg(wifi.STA_IDLE, function()  print("\r\nSTA_IDLE") end)
-  wifi.sta.eventMonReg(wifi.STA_CONNECTING, function()  print("\r\nVerbinde mit WLAN") end)
-  wifi.sta.eventMonReg(wifi.STA_WRONGPWD, function()  print("\r\nWLAN-Passwort falsch") end)
-  wifi.sta.eventMonReg(wifi.STA_APNOTFOUND, function()  print("\r\nWLAN-AP nicht gefunden") end)
-  wifi.sta.eventMonReg(wifi.STA_FAIL, function()  print("\r\nWLAN-Verbindung fehlgeschlagen") end)
-  wifi.sta.eventMonReg(wifi.STA_GOTIP, function()  print("\r\nIP-Adresse bezogen")
-    do_update()
+  tmr.alarm(0, 5000, tmr.ALARM_SINGLE, function()
+    wifi.setmode(wifi.STATION)
+    wifi.sta.eventMonReg(wifi.STA_IDLE, function()  print("\r\nSTA_IDLE") end)
+    wifi.sta.eventMonReg(wifi.STA_CONNECTING, function()  print("\r\nVerbinde mit WLAN") end)
+    wifi.sta.eventMonReg(wifi.STA_WRONGPWD, function()  print("\r\nWLAN-Passwort falsch") end)
+    wifi.sta.eventMonReg(wifi.STA_APNOTFOUND, function()  print("\r\nWLAN-AP nicht gefunden") end)
+    wifi.sta.eventMonReg(wifi.STA_FAIL, function()  print("\r\nWLAN-Verbindung fehlgeschlagen") end)
+    wifi.sta.eventMonReg(wifi.STA_GOTIP, function()  print("\r\nIP-Adresse bezogen")
+      update_data()
+    end)
+    wifi.sta.eventMonStart()
+    wifi.sta.config(config.ssid, config.passphrase)
+    wifi.sta.connect()
+    tmr.register(timers["HTTP"], config.interval*1000, tmr.ALARM_AUTO, update_data)
+    tmr.start(0)
   end)
-  wifi.sta.eventMonStart()
-  wifi.sta.config(config.ssid, config.passphrase)
-  wifi.sta.connect()
-  tmr.register(TIMERS["HTTP"], config.interval*1000, tmr.ALARM_AUTO, do_update)
-  tmr.start(0)
 end
 
 function progmode()
-  tmr.unregister(0)
+  for _,t in pairs(timers) do
+    tmr.unregister(t)
+  end
   uart.setup(0, 115200, 8, uart.PARITY_NONE, uart.STOPBITS_1, 1)
 end
 
