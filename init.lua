@@ -1,11 +1,7 @@
 TIMERS = {
   ["HTTP"] = 0;
 }
-UPDATE_INTERVAL = 30*1000
-RT_URL = "http://www.invg.de/rt/getRealtimeData.action?stopPoint=2&station=IN-Klini&sid=273"
-SSID = "Freifunk"
-PASSPHRASE = ""
-LINES = 2
+config = require("config")
 
 function setcursor(x,y)
   uart.write(0, string.format("\27[%d;%dH", y, x))
@@ -16,7 +12,7 @@ function clear()
 end
 
 function do_update()
-  http.get(RT_URL, nil, function(code, _data)
+  http.get(config.url, nil, function(code, _data)
     if (code >= 0) then
       departures = cjson.decode(_data).departures
       setcursor(0,0)
@@ -24,7 +20,7 @@ function do_update()
         setcursor(0,0)
         uart.write(0, "Ich seh keinen Bus.\r\nHeimlaufen?")
       else
-        n = math.min(#departures, LINES)
+        n = math.min(#departures, config.lines)
         for i=1, n do
           setcursor(0, i)
           d = departures[i]
@@ -56,9 +52,9 @@ function init()
     do_update()
   end)
   wifi.sta.eventMonStart()
-  wifi.sta.config(SSID, PASSPHRASE)
+  wifi.sta.config(config.ssid, config.passphrase)
   wifi.sta.connect()
-  tmr.register(TIMERS["HTTP"], UPDATE_INTERVAL, tmr.ALARM_AUTO, do_update)
+  tmr.register(TIMERS["HTTP"], config.interval*1000, tmr.ALARM_AUTO, do_update)
   tmr.start(0)
 end
 
