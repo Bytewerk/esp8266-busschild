@@ -7,6 +7,8 @@ local config = {
   interval = 30;
   lines = 2;
   columns = 20;
+  hostname = "busschild-01";
+  telnetport = 23;
 }
 
 return config

@@ -5,6 +5,7 @@ timers = {
   ["display"] = 1;
 }
 config = require("config")
+telnet = require("telnet")
 departures = {}
 scroll_idx = 1
 
@@ -73,9 +74,11 @@ function init()
     end)
     wifi.sta.eventMonStart()
     wifi.sta.config(config.ssid, config.passphrase)
+    wifi.sta.sethostname(config.hostname)
     wifi.sta.connect()
     tmr.register(timers["HTTP"], config.interval*1000, tmr.ALARM_AUTO, update_data)
     tmr.start(0)
+    telnet.createServer(config.telnetport)
   end)
 end
 
