@@ -15,6 +15,7 @@ function telnet.createServer(port)
       c:on("disconnection",function(c)
         node.output(nil)
       end)
+      print(">")
   end)
   return s
 end
