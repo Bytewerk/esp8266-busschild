@@ -17,14 +17,17 @@ function clear()
   uart.write(0, "\27[2J")
 end
 
+function stradj(s, len)
+  return s:sub(1, len) .. string.rep(" ", len - s:len())
+end
+
 function format_departure(d)
   err, str = pcall(function()
     time = tonumber(d.strTime:gsub("(%d+).*", "%1"), 10)
     strTime = (time == 0) and " JETZT" or string.format(" %dm", time)
     route = d.route:gsub("%s+", "") .. " " .. d.destination
     len = config.columns - strTime:len()
-    route_adj = route:sub(1, len) .. string.rep(" ", len - route:len())
-    return route_adj .. strTime
+    return stradj(route, len) .. strTime
   end)
   if err then
     return str
@@ -37,7 +40,8 @@ function update_display()
   setcursor(0,0)
   if #departures == 0 then
     setcursor(0,0)
-    uart.write(0, "Ich seh keinen Bus.\r\nHeimlaufen?")
+    uart.write(0, stradj("Ich seh keinen Bus.", config.columns)
+      .. "\r\n" .. stradj("Heimlaufen?", config.columns))
   else
     for i=1, math.min(config.lines-1, #departures) do
       setcursor(0, i)
@@ -59,7 +63,8 @@ function update_data()
       tmr.alarm(timers["display"], 3000, tmr.ALARM_AUTO, update_display)
     else
       setcursor(0,0)
-      uart.write(0, "Konnte Daten nicht\r\nholen: HTTP-Fehler.")
+      uart.write(0, stradj("Konnte Daten nicht", config.columns)
+        .. "\r\n" .. stradj("holen: HTTP-Fehler.", config.columns))
       tmr.unregister(timers["display"])
     end
   end)
