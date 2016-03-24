@@ -18,12 +18,19 @@ function clear()
 end
 
 function format_departure(d)
-  time = tonumber(d.strTime:gsub("(%d+).*", "%1"), 10)
-  strTime = (time == 0) and " JETZT" or string.format(" %dm", time)
-  route = d.route:gsub("%s+", "") .. " " .. d.destination
-  len = config.columns - strTime:len()
-  route_adj = route:sub(1, len) .. string.rep(" ", len - route:len())
-  return route_adj .. strTime
+  err, str = pcall(function()
+    time = tonumber(d.strTime:gsub("(%d+).*", "%1"), 10)
+    strTime = (time == 0) and " JETZT" or string.format(" %dm", time)
+    route = d.route:gsub("%s+", "") .. " " .. d.destination
+    len = config.columns - strTime:len()
+    route_adj = route:sub(1, len) .. string.rep(" ", len - route:len())
+    return route_adj .. strTime
+  end)
+  if err then
+    return str
+  else
+    return ""
+  end
 end
 
 function update_display()
