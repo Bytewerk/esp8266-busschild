@@ -26,7 +26,7 @@ function format_departure(d)
     time = tonumber(d.strTime:gsub("(%d+).*", "%1"), 10)
     strTime = (time == 0) and " JETZT" or string.format(" %dm", time)
     route = d.route:gsub("%s+", "") .. " " .. d.destination
-    len = config.columns - strTime:len()
+    len = config.display.columns - strTime:len()
     return stradj(route, len) .. strTime
   end)
   if err then
@@ -40,16 +40,16 @@ function update_display()
   setcursor(0,0)
   if #departures == 0 then
     setcursor(0,0)
-    uart.write(0, stradj("Ich seh keinen Bus.", config.columns)
-      .. "\r\n" .. stradj("Heimlaufen?", config.columns))
+    uart.write(0, stradj("Ich seh keinen Bus.", config.display.columns)
+      .. "\r\n" .. stradj("Heimlaufen?", config.display.columns))
   else
-    for i=1, math.min(config.lines-1, #departures) do
+    for i=1, math.min(config.display.lines-1, #departures) do
       setcursor(0, i)
       uart.write(0, format_departure(departures[i]))
     end
-    if #departures >= config.lines then
-      scroll_idx = scroll_idx >= #departures and config.lines or scroll_idx + 1
-      setcursor(0, config.lines)
+    if #departures >= config.display.lines then
+      scroll_idx = scroll_idx >= #departures and config.display.lines or scroll_idx + 1
+      setcursor(0, config.display.lines)
       uart.write(0, format_departure(departures[scroll_idx]))
     end
   end
@@ -60,11 +60,11 @@ function update_data()
     if (code >= 0) then
       departures = cjson.decode(_data).departures
       update_display()
-      tmr.alarm(timers["display"], 3000, tmr.ALARM_AUTO, update_display)
+      tmr.alarm(timers["display"], config.display.interval*1000, tmr.ALARM_AUTO, update_display)
     else
       setcursor(0,0)
-      uart.write(0, stradj("Konnte Daten nicht", config.columns)
-        .. "\r\n" .. stradj("holen: HTTP-Fehler.", config.columns))
+      uart.write(0, stradj("Konnte Daten nicht", config.display.columns)
+        .. "\r\n" .. stradj("holen: HTTP-Fehler.", config.display.columns))
       tmr.unregister(timers["display"])
     end
   end)
