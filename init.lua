@@ -6,16 +6,9 @@ timers = {
 }
 config = require("config")
 telnet = require("telnet")
+display = require("display")
 departures = {}
 scroll_idx = 1
-
-function setcursor(x,y)
-  uart.write(0, string.format("\27[%d;%dH", y, x))
-end
-
-function clear()
-  uart.write(0, "\27[2J")
-end
 
 function stradj(s, len)
   return s:sub(1, len) .. string.rep(" ", len - s:len())
@@ -37,19 +30,19 @@ function format_departure(d)
 end
 
 function update_display()
-  setcursor(0,0)
+  display.setcursor(0,0)
   if #departures == 0 then
-    setcursor(0,0)
+    display.setcursor(0,0)
     uart.write(0, stradj("Ich seh keinen Bus.", config.display.columns)
       .. "\r\n" .. stradj("Heimlaufen?", config.display.columns))
   else
     for i=1, math.min(config.display.lines-1, #departures) do
-      setcursor(0, i)
+      display.setcursor(0, i)
       uart.write(0, format_departure(departures[i]))
     end
     if #departures >= config.display.lines then
       scroll_idx = scroll_idx >= #departures and config.display.lines or scroll_idx + 1
-      setcursor(0, config.display.lines)
+      display.setcursor(0, config.display.lines)
       uart.write(0, format_departure(departures[scroll_idx]))
     end
   end
@@ -62,7 +55,7 @@ function update_data()
       update_display()
       tmr.alarm(timers["display"], config.display.interval*1000, tmr.ALARM_AUTO, update_display)
     else
-      setcursor(0,0)
+      display.setcursor(0,0)
       uart.write(0, stradj("Konnte Daten nicht", config.display.columns)
         .. "\r\n" .. stradj("holen: HTTP-Fehler.", config.display.columns))
       tmr.unregister(timers["display"])
@@ -72,7 +65,7 @@ end
 
 function init()
   uart.setup(0, 9600, 8, uart.PARITY_ODD, uart.STOPBITS_1, 1)
-  setcursor(0,0)
+  display.setcursor(0,0)
   uart.write(0, "      bytewerk      \r\n Busabfahrtsanzeige ")
   tmr.alarm(0, 5000, tmr.ALARM_SINGLE, function()
     wifi.setmode(wifi.STATION)
