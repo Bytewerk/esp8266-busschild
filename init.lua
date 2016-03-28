@@ -10,10 +10,6 @@ display = require("display")
 departures = {}
 scroll_idx = 1
 
-function stradj(s, len)
-  return s:sub(1, len) .. string.rep(" ", len - s:len())
-end
-
 function format_departure(d)
   err, str = pcall(function()
     time = tonumber(d.strTime:gsub("(%d+).*", "%1"), 10)
@@ -30,21 +26,18 @@ function format_departure(d)
 end
 
 function update_display()
-  display.setcursor(0,0)
+  display.reset()
   if #departures == 0 then
-    display.setcursor(0,0)
-    uart.write(0, stradj("Ich seh keinen Bus.", config.display.columns)
-      .. "\r\n" .. stradj("Heimlaufen?", config.display.columns))
+    display.write{"Ich seh keinen Bus.", "Heimlaufen?"}
   else
     for i=1, math.min(config.display.lines-1, #departures) do
-      display.setcursor(0, i)
-      uart.write(0, format_departure(departures[i]))
+      display.lines[i] = format_departure(departures[i])
     end
     if #departures >= config.display.lines then
       scroll_idx = scroll_idx >= #departures and config.display.lines or scroll_idx + 1
-      display.setcursor(0, config.display.lines)
-      uart.write(0, format_departure(departures[scroll_idx]))
+      display.lines[config.display.lines] = format_departure(departures[scroll_idx])
     end
+    display.flush()
   end
 end
 
@@ -55,9 +48,7 @@ function update_data()
       update_display()
       tmr.alarm(timers["display"], config.display.interval*1000, tmr.ALARM_AUTO, update_display)
     else
-      display.setcursor(0,0)
-      uart.write(0, stradj("Konnte Daten nicht", config.display.columns)
-        .. "\r\n" .. stradj("holen: HTTP-Fehler.", config.display.columns))
+      display.write{"Konnte Daten nicht", "holen: HTTP-Fehler."}
       tmr.unregister(timers["display"])
     end
   end)
@@ -65,16 +56,16 @@ end
 
 function init()
   uart.setup(0, 9600, 8, uart.PARITY_ODD, uart.STOPBITS_1, 1)
-  display.setcursor(0,0)
-  uart.write(0, "      bytewerk      \r\n Busabfahrtsanzeige ")
+  display.write{"      bytewerk      ", " Busabfahrtsanzeige "}
   tmr.alarm(0, 5000, tmr.ALARM_SINGLE, function()
     wifi.setmode(wifi.STATION)
-    wifi.sta.eventMonReg(wifi.STA_IDLE, function()  print("\r\nSTA_IDLE") end)
-    wifi.sta.eventMonReg(wifi.STA_CONNECTING, function()  print("\r\nVerbinde mit WLAN") end)
-    wifi.sta.eventMonReg(wifi.STA_WRONGPWD, function()  print("\r\nWLAN-Passwort falsch") end)
-    wifi.sta.eventMonReg(wifi.STA_APNOTFOUND, function()  print("\r\nWLAN-AP nicht gefunden") end)
-    wifi.sta.eventMonReg(wifi.STA_FAIL, function()  print("\r\nWLAN-Verbindung fehlgeschlagen") end)
-    wifi.sta.eventMonReg(wifi.STA_GOTIP, function()  print("\r\nIP-Adresse bezogen")
+    local w = display.write
+    wifi.sta.eventMonReg(wifi.STA_IDLE, function() w("\r\nSTA_IDLE") end)
+    wifi.sta.eventMonReg(wifi.STA_CONNECTING, function() w("\r\nVerbinde mit WLAN") end)
+    wifi.sta.eventMonReg(wifi.STA_WRONGPWD, function() w("\r\nWLAN-Passwort falsch") end)
+    wifi.sta.eventMonReg(wifi.STA_APNOTFOUND, function() w("\r\nWLAN-AP nicht gefunden") end)
+    wifi.sta.eventMonReg(wifi.STA_FAIL, function() w("\r\nWLAN-Verbindung fehlgeschlagen") end)
+    wifi.sta.eventMonReg(wifi.STA_GOTIP, function() w("\r\nIP-Adresse bezogen")
       update_data()
     end)
     wifi.sta.eventMonStart()
