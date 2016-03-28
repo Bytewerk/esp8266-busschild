@@ -5,8 +5,11 @@ local config = {
   passphrase = "bluemchenwiese";
   url = "http://www.invg.de/rt/getRealtimeData.action?stopPoint=2&station=IN-Klini&sid=273";
   interval = 30;
-  lines = 2;
-  columns = 20;
+  display = {
+    interval = 5;
+    lines = 2;
+    columns = 20;
+  };
   hostname = "busschild-01";
   telnetport = 23;
 }
