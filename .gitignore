@@ -1,6 +1,7 @@
 *
 .*
-!.gitignore
+!**/
+!**/.gitignore
 !Readme.md
-!*.lua
+!**/*.lua
 !license.txt
