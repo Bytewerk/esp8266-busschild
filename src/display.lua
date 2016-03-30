@@ -6,8 +6,9 @@ local display = {
   lines = {};
 }
 
-function stradj(s)
-    return s:sub(1, config.display.columns) .. string.rep(" ", config.display.columns - s:len())
+function stradj(s, l)
+    l = l and l or config.display.columns
+    return s:sub(1, l) .. string.rep(" ", l - s:len())
 end
 
 function display.reset()
@@ -20,6 +21,10 @@ function display.flush()
     line = stradj(line)
     uart.write(0, line)
     if i < #display.lines then uart.write(0, "\r\n") end
+  end
+  for i = #display.lines+1, config.display.lines do
+    display.setcursor(0, i)
+    uart.write(0, string.rep(" ", config.display.columns))
   end
 end
 

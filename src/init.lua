@@ -21,6 +21,7 @@ function format_departure(d)
   if err then
     return str
   else
+    print(str)
     return ""
   end
 end
