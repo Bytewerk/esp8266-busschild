@@ -26,16 +26,24 @@ function init_wifi()
   if config.ssid then
     local passphrase = config.passphrase and config.passphrase or ""
     wifi.sta.config(config.ssid, passphrase, 1)
+    wifi.sta.eventMonReg(wifi.STA_IDLE, function() print("\r\nWLAN nicht verbunden.") end)
+    wifi.sta.eventMonReg(wifi.STA_CONNECTING, function() print("\r\nVerbinde mit WLAN") end)
+    wifi.sta.eventMonReg(wifi.STA_WRONGPWD, function() print("\r\nWLAN-Passwort falsch") end)
+    wifi.sta.eventMonReg(wifi.STA_APNOTFOUND, function() print("\r\nWLAN-AP nicht gefunden") end)
+    wifi.sta.eventMonReg(wifi.STA_FAIL, function() print("\r\nWLAN-Verbindung fehlgeschlagen") end)
+    wifi.sta.eventMonReg(wifi.STA_GOTIP, function() print("\r\nIP-Adresse bezogen") end)
+    wifi.sta.eventMonStart()
   else
     print("WLAN nicht\r\nkonfiguriert.")
   end
 end
 
-telnet = require("telnet")
 
 xpcall(function()
+  telnet = require("telnet")
   telnet.createServer(config.telnetport and config.telnetport or 23)
   init_wifi()
+  busschild = require("busschild")
 end, function(err)
   print(err)
 end)
