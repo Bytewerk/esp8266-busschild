@@ -1,13 +1,11 @@
 -- © 2016 Peter Brantsch <peter@bingo-ev.de>, see license.txt
 
 local config = {
-  ssid = "bytewerk";
-  passphrase = "bluemchenwiese";
   url = "http://www.invg.de/rt/getRealtimeData.action?stopPoint=2&station=IN-Klini&sid=273";
   interval = 30;
   display = {
     interval = 5;
-    lines = 2;
+    lines = 4;
     columns = 20;
   };
   hostname = "busschild-01";
