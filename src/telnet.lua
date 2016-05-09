@@ -2,6 +2,7 @@ local telnet = {}
 local sockets = {}
 
 node.output(function(str)
+  uart.write(0, str)
   for s,_ in pairs(sockets) do
     s:send(str)
   end
