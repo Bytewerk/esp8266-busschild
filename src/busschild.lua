@@ -45,7 +45,12 @@ function update_data()
   tmr.stop(timers["display"])
   http.get(config.url, nil, function(code, _data)
     if (code >= 0) then
-      departures = cjson.decode(_data).departures
+      local data = cjson.decode(_data)
+      if data then
+        departures = data.departures
+      else
+        departures = {}
+      end
       update_display()
       tmr.start(timers["display"])
     else
