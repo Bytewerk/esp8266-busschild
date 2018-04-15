@@ -34,6 +34,7 @@ function init_wifi()
     wifi.sta.eventMonReg(wifi.STA_FAIL, function() p("\r\nWLAN-Verbindung fehlgeschlagen\r\nESSID %s", ssid) end)
     wifi.sta.eventMonReg(wifi.STA_GOTIP, function() p("\r\nIP-Adresse bezogen\r\n%s", wifi.sta.getip()) end)
     wifi.sta.eventMonStart()
+    wifi.sta.sethostname(config.hostname)
   else
     print("WLAN nicht\r\nkonfiguriert.")
   end
@@ -41,8 +42,6 @@ end
 
 
 xpcall(function()
-  telnet = require("telnet")
-  telnet.createServer(config.telnetport and config.telnetport or 23)
   init_wifi()
   busschild = require("busschild")
 end, function(err)
