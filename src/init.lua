@@ -1,5 +1,9 @@
 -- © 2016 Peter Brantsch <peter@bingo-ev.de>, see license.txt
 
+timers = {
+  ["data"] = 0;
+}
+
 function progmode()
   for _,t in pairs(timers) do
     tmr.unregister(t)
