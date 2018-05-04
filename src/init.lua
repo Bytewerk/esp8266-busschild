@@ -27,13 +27,6 @@ function init_wifi()
   end
   if ssid then
     function p(...) uart.write(0, string.format(...)) end
-    wifi.sta.eventMonReg(wifi.STA_IDLE, function() p("\r\nWLAN nicht verbunden.") end)
-    wifi.sta.eventMonReg(wifi.STA_CONNECTING, function() p("\r\nVerbinde mit WLAN\r\nESSID %s", ssid) end)
-    wifi.sta.eventMonReg(wifi.STA_WRONGPWD, function() p("\r\nWLAN-Passwort falsch") end)
-    wifi.sta.eventMonReg(wifi.STA_APNOTFOUND, function() p("\r\nWLAN-AP nicht gefunden\r\nESSID %s", ssid) end)
-    wifi.sta.eventMonReg(wifi.STA_FAIL, function() p("\r\nWLAN-Verbindung fehlgeschlagen\r\nESSID %s", ssid) end)
-    wifi.sta.eventMonReg(wifi.STA_GOTIP, function() p("\r\nIP-Adresse bezogen\r\n%s", wifi.sta.getip()) end)
-    wifi.sta.eventMonStart()
     wifi.sta.sethostname(config.hostname)
   else
     print("WLAN nicht\r\nkonfiguriert.")
